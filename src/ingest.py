@@ -28,11 +28,8 @@ from pathlib import Path
 
 import duckdb
 
-ROOT = Path(__file__).resolve().parent.parent
-RAW_DIR = ROOT / "data" / "raw"
-DB_PATH = ROOT / "data" / "processed" / "claims.duckdb"
+from config import DB_PATH, DEFAULT_SAMPLE, RAW_DIR
 
-DEFAULT_SAMPLE = 2  # must match download.py (DECISIONS.md #8)
 
 
 def sources(n: int) -> dict[str, str]:
@@ -113,7 +110,7 @@ def main() -> int:
         print(f"raw.{table:<12} {rows:>12,} rows")
 
     con.close()
-    print(f"\nLoaded into {DB_PATH.relative_to(ROOT)}")
+    print(f"\nLoaded into {DB_PATH}")
     return 0
 
 

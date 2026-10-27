@@ -1,7 +1,7 @@
 # Status
 
 **Rule:** the resume claims only what is in the **Done** column.
-Overall: 🟡 **In progress** (Phase 1 of 6)
+Overall: 🟡 **In progress** (Phase 2 of 6)
 
 | Phase | Item | Status |
 |---|---|---|
@@ -9,9 +9,10 @@ Overall: 🟡 **In progress** (Phase 1 of 6)
 | 0 | `src/download.py`: fetch Sample 2 (6 files) | ✅ Done |
 | 0 | `src/ingest.py`: raw load into DuckDB + load log | ✅ Done |
 | 1 | `src/profiling.py`: reusable profile / key / top-value helpers | ✅ Done |
-| 1 | `notebooks/01_profile_raw.ipynb`: grain, completeness, dates, linkage, costs, codes | 🟡 Built and tested; **run it yourself on Windows, then mark Done** |
+| 1 | `notebooks/01_profile_raw.ipynb`: grain, completeness, dates, linkage, costs, codes | ✅ Done |
 | 1 | `docs/profiling_findings.md`: findings → Phase 2 rules | ✅ Done |
-| 2 | Typed clean tables | ⬜ Planned |
+| 2 | `src/config.py`: shared paths + `CLAIMS_DB` override | ✅ Done |
+| 2 | `sql/clean/*.sql` + `src/clean.py`: typed clean tables, flags, segment date inheritance | 🟡 Built and verified on a test copy; **run on your machine, then mark Done** |
 | 2 | Validation checks + data-quality report | ⬜ Planned |
 | 2 | pytest tests for validation logic | ⬜ Planned |
 | 3 | Unified claims table | ⬜ Planned |

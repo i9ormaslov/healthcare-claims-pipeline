@@ -113,3 +113,36 @@ Format: **Decision** · Alternatives · Tradeoffs · Date
 - **Why:** This is the CMS convention. It keeps every claim inside 2008–2010 and matches how the beneficiary files are split by year.
 - **Tradeoffs:** A stay from Dec 2008 to Jan 2009 counts entirely in 2009. That's fine at annual granularity; Phase 6 monthly trends will note it.
 - **Date:** 2026-10-27
+
+### 13. Clean layer: same grain as raw, typed, flagged, SQL in files
+- **Chose:** A `clean` schema built by `sql/clean/01_…04_*.sql`, run by `src/clean.py` in one transaction.
+  - Each clean table has **exactly the same rows as its raw table**. No aggregation happens here.
+  - Money is `DECIMAL(12,2)`, dates are `DATE`, and codes become booleans.
+  - Every profiling finding becomes a flag column.
+- **Alternatives:** Do cleaning in pandas; aggregate to claim level during cleaning; store SQL as Python strings.
+- **Why:**
+  - **Same grain** means raw and clean can be reconciled row-for-row and dollar-for-dollar, so cleaning provably loses nothing. Aggregating to claim level comes in Phase 3.
+  - **DECIMAL for money:** floating point (DOUBLE) can't represent most cents exactly, so sums drift by fractions of a cent. Raw vs clean totals now match to the cent.
+  - **SQL in .sql files** can be read, diffed, and pasted into the notebook for debugging. Python only orchestrates.
+  - **One transaction:** if any step fails, ROLLBACK keeps the old clean tables. You never get a half-rebuilt layer.
+- **Tradeoffs:**
+  - Columns the analysis doesn't need are not carried into clean: procedure codes, NPIs, most HCPCS, minor cost-sharing fields. They remain in `raw`, so adding one back is a one-line change.
+  - DECIMAL math is slightly slower than DOUBLE. That's irrelevant at this size.
+- **Date:** 2026-10-27
+
+### 14. Orphaned claim segments: keep, flag, leave the year NULL
+- **What happened:** After cleaning, 192 outpatient rows still had no dates. They are **segment-2 rows whose claim has no segment 1**: page 2 with no page 1. They carry $247,460. Profiling didn't catch it; the post-cleaning reconciliation did.
+- **Chose:** Keep the rows, add `orphan_segment = TRUE`, and leave `from_date`, `thru_date`, and `claim_year` NULL.
+- **Alternatives:**
+  - Drop them: loses real money.
+  - Guess a year (e.g., the member's first claim year): invents data.
+  - Fill from a neighboring claim: also invents data.
+- **Why:** NULL plus a flag is honest. Totals stay complete, yearly breakdowns exclude these rows *visibly*, and the data-quality report states the amount.
+- **Tradeoff:** Yearly totals sum to $247K less than the all-time total. The report must say so, or the numbers look inconsistent.
+- **Date:** 2026-10-27
+
+### 15. Shared config module
+- **Chose:** `src/config.py` holds paths, the default sample, and the database location (overridable with the `CLAIMS_DB` environment variable).
+- **Why:** download.py and ingest.py had duplicate settings guarded only by a comment saying they "must match." With a third script, duplication becomes drift. `CLAIMS_DB` also lets every step run against a scratch database for testing.
+- **Tradeoff:** One more file to explain.
+- **Date:** 2026-10-27

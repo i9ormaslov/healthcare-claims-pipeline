@@ -34,6 +34,7 @@ Members: 116,395 in 2008 → 114,618 in 2009 → 112,845 in 2010. The decline co
 | 11 | Rx patient paid > total drug cost | 288,824 fills (5.2%) | High | Flag `rx_cost_inconsistent`; exclude from cost-per-fill |
 | 12 | Rx quantity = 0 / days supply = 0 | 232,166 / 118,118 fills | High | Flag `rx_nothing_dispensed` |
 | 13 | Date format, date logic, after-death, and orphan checks | 0 violations | Info | Keep as automated checks |
+| 14 | *Found during cleaning:* segment-2 rows with no segment 1 | 192 OP claims, $247,460 | Medium | Keep, flag `orphan_segment`, leave year NULL (DECISIONS #14) |
 
 ## Caveats to carry into every summary
 - **Synthetic data.** CMS synthesis weakens real relationships between variables. Findings demonstrate method, not clinical truth. For example, the five lipid-disorder codes have suspiciously even counts.

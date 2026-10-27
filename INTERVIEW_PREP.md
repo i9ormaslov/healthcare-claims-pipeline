@@ -119,4 +119,43 @@ How to use this file:
   - Also: `>=` version ranges broke the DuckDB file on another machine, so you pinned versions.
 - My answer:
 
-_(Questions for cleaning, SQL, the dashboard, and communication will be added as we build those phases.)_
+## Cleaning (Phase 2)
+
+**Q: Walk me through your clean layer. What does it guarantee?**
+- Hints:
+  - Same rows as raw (same grain), so it reconciles row-for-row and dollar-for-dollar.
+  - Real types; readable names; codes become booleans.
+  - Findings become flags, not deletions.
+  - SQL lives in files; Python runs them in one transaction.
+- My answer:
+
+**Q: Why DECIMAL instead of FLOAT for money?**
+- Hints:
+  - Binary floating point can't represent most cents exactly (0.1 + 0.2 ≠ 0.3).
+  - Sums over millions of rows drift.
+  - DECIMAL is exact, and your raw vs clean totals match to the cent.
+- My answer:
+
+**Q: How did you fill in the missing dates on segment-2 rows?**
+- Hints:
+  - Window function `MAX(date) OVER (PARTITION BY claim_id)`.
+  - MAX ignores NULLs, so every segment gets segment 1's date.
+  - Unlike GROUP BY, a window keeps every row (grain preserved).
+- My answer:
+
+**Q: Tell me about something your checks caught that you didn't expect.**
+- Hints:
+  - After cleaning, 192 outpatient rows still had no dates: segment 2 with no segment 1.
+  - Profiling didn't catch it; checking the *output* did.
+  - Decision: keep ($247K is real money), flag `orphan_segment`, leave the year NULL rather than invent one.
+  - Lesson: verify transformations, not just inputs.
+- My answer:
+
+**Q: What happens if one of your cleaning steps fails halfway?**
+- Hints:
+  - All steps run in one transaction.
+  - A failure triggers ROLLBACK and the previous clean tables stay intact.
+  - No half-rebuilt layer where tables disagree.
+- My answer:
+
+_(Questions for validation, SQL, the dashboard, and communication will be added as we build those phases.)_

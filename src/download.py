@@ -29,7 +29,7 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
-RAW_DIR = Path(__file__).resolve().parent.parent / "data" / "raw"
+from config import DEFAULT_SAMPLE, RAW_DIR
 
 CMS_BASE = (
     "https://www.cms.gov/research-statistics-data-and-systems/"
@@ -37,10 +37,6 @@ CMS_BASE = (
 )
 CMS_FILES_BASE = "https://downloads.cms.gov/files/"
 
-# Sample 2, not Sample 1: CMS never published a working 2010 beneficiary
-# file for Sample 1 (its link points at Sample 20 and the Sample 1 URL 404s).
-# See DECISIONS.md #8. Every sample is internally complete, so any one works.
-DEFAULT_SAMPLE = 2
 
 
 def mvp_files(n: int) -> list[tuple[str, str]]:

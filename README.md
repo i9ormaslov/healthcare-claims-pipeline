@@ -25,6 +25,7 @@ py -m venv .venv
 pip install -r requirements.txt
 python src/download.py      # ~6 files into data/raw/
 python src/ingest.py        # loads data/processed/claims.duckdb
+python src/clean.py         # builds typed, flagged clean.* tables
 jupyter notebook            # open notebooks/01_profile_raw.ipynb, Run All
 ```
 
