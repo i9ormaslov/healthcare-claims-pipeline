@@ -6,8 +6,8 @@ Overall: 🟡 **In progress** (Phase 0 of 6)
 | Phase | Item | Status |
 |---|---|---|
 | 0 | Repo structure, `.gitignore`, requirements | ✅ Done |
-| 0 | `src/download.py`: fetch Sample 2 (6 files) | 🟡 Written, not yet run on real data |
-| 0 | `src/ingest.py`: raw load into DuckDB + load log | 🟡 Tested on fake data, not yet on real data |
+| 0 | `src/download.py`: fetch Sample 2 (6 files) | ✅ Done |
+| 0 | `src/ingest.py`: raw load into DuckDB + load log | ✅ Done |
 | 1 | Column profiling notebook | ⬜ Planned |
 | 2 | Typed clean tables | ⬜ Planned |
 | 2 | Validation checks + data-quality report | ⬜ Planned |
