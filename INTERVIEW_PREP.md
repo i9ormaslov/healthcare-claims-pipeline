@@ -62,4 +62,61 @@ How to use this file:
   - Consequence: cost per member is understated, and "outpatient" means institutional only.
 - My answer:
 
+## Profiling (Phase 1)
+
+**Q: What was the most important thing profiling told you?**
+- Hints:
+  - `CLM_ID` is not unique; the key is `(CLM_ID, SEGMENT)`.
+  - Segment-2 rows have no dates but carry payments.
+  - Dropping them understates cost; counting them as claims overstates volume.
+  - You found it with an exact key check, not by eyeballing.
+- My answer:
+
+**Q: Some of your claim rows had no dates. Why didn't you just drop them?**
+- Evidence (your own predict-then-run, notebook 01):
+  - Segment-2 rows = continuations of a claim ("page 2 of the invoice"); same `CLM_ID`, no dates.
+  - Dropping them removes $15.1M of $225.5M outpatient payments (7.2%) vs only 0.2% for inpatient.
+  - Segment-2 median payment is *higher* than segment 1 (outpatient $1,500 vs $70), so the loss lands on the most expensive claims.
+  - Your prediction "1–5%" was right combined (~2%) but hid the 0.2% vs 7.2% split: averages across groups hide differences within them.
+- Starter answer (rewrite this in your own voice): "Dropping the date-less segment rows looked harmless, but they held 7% of outpatient payments and skewed toward high-cost claims, so I kept them and inherited their dates from segment 1."
+- My answer:
+
+**Q: Your data was synthetic. Did you find any real data-quality problems?**
+- Hints:
+  - Structural checks passed (dates, death, orphans), and that's evidence too.
+  - Semantic problems: about 5% of Rx fills show the patient paying more than the total cost.
+  - Zero quantity or days supply; negative payments; `OTHER` placeholder codes.
+  - Inconsistent coding: ESRD `0`/`Y`, chronic conditions 1/2.
+- My answer:
+
+**Q: How did you decide what "1" means in the chronic-condition flags?**
+- Hints:
+  - Tested both readings against plausible prevalence: diabetes 30–40% vs 60–70%.
+  - Then confirmed in the codebook.
+  - Data checks the documentation; the documentation checks the data.
+- My answer:
+
+**Q: Why flag bad rows instead of deleting them?**
+- Hints:
+  - Negatives are usually adjustments.
+  - Deleting hides how much was affected.
+  - Flags keep the choice visible and reversible.
+  - Each metric states its own exclusions.
+- My answer:
+
+**Q: Anything surprising about the cost fields?**
+- Hints:
+  - Every outpatient amount is a multiple of $10.
+  - Thousands of rows sit at exactly the maximum, so CMS top-coded for privacy.
+  - Consequence: use percentiles, not z-scores, and the high-cost analysis understates the tail.
+- My answer:
+
+**Q: What's a mistake you made, and how did you catch it?**
+- Hints:
+  - The approximate distinct count (`SUMMARIZE`) was 37% too high for members with Rx.
+  - It also called a two-value column "constant."
+  - Now: exact counts for anything reported.
+  - Also: `>=` version ranges broke the DuckDB file on another machine, so you pinned versions.
+- My answer:
+
 _(Questions for cleaning, SQL, the dashboard, and communication will be added as we build those phases.)_

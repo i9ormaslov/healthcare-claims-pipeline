@@ -85,3 +85,31 @@ Format: **Decision** · Alternatives · Tradeoffs · Date
 - **Why Sample 2:** All eight files are linked consistently (checked 2026-10-27). Each sample is a complete, self-contained slice, so nothing analytical depends on which number we pick.
 - **Tradeoff:** One extra download. The ingest patterns include the sample number, so leftover Sample 1 files in `data/raw/` can't be mixed in.
 - **Date:** 2026-10-27
+
+### 9. Pin exact dependency versions
+- **Chose:** `==` pins in `requirements.txt` (duckdb 2.0.0, pandas 3.1.0, pytest 9.1.1, jupyter 1.1.1; Python 3.14).
+- **What happened:** The original `>=` ranges installed DuckDB 2.0.0 on Windows. A database file written by 2.0 could not be opened by DuckDB 1.5.6 on another machine ("database file was created with a newer version").
+- **Alternatives:** Ranges (`>=`); a lock file tool (pip-tools, uv, poetry).
+- **Why:** A DuckDB file is tied to the engine version that wrote it, so "works on my machine" turns into a real failure. Exact pins are the simplest fix that a reviewer can read at a glance.
+- **Tradeoffs:** Pins don't lock *transitive* dependencies (numpy, etc.). A lock file would, at the cost of another tool. Upgrades are now deliberate: bump the pin, re-run, commit.
+- **Date:** 2026-10-27
+
+### 10. Claim grain is (CLM_ID, SEGMENT)
+- **Chose:** Treat `(CLM_ID, SEGMENT)` as the row key for inpatient and outpatient. Count claims as `COUNT(DISTINCT CLM_ID)`. Sum payments across all segments.
+- **Evidence:** `CLM_ID` alone has 60 duplicates (inpatient) and 11,009 (outpatient). With `SEGMENT` added, there are zero. Segment-2 rows have no dates but 59/60 (inpatient) and 10,968/11,201 (outpatient) carry payments. (Notebook 01, section 2.)
+- **Alternatives:** Drop segment 2 (understates cost); treat each row as a claim (overstates claim volume).
+- **Tradeoffs:** Segment-2 dates must be inherited from segment 1, which is one extra join in cleaning.
+- **Date:** 2026-10-27
+
+### 11. Flag suspicious values; don't delete them
+- **Chose:** Negative payments, zero payments, `OTHER` placeholder codes, and impossible Rx values get **flags** in the clean tables. They are not dropped. Each metric states which flags it excludes.
+- **Why:** Negative payments are usually adjustments; deleting them overstates cost. Deleting rows also makes the data-quality report unable to say how much was affected. Flagging keeps the decision visible and reversible.
+- **Tradeoffs:** Every analysis query must apply the right filter. This will be centralized in Phase 3 views so it isn't repeated.
+- **Date:** 2026-10-27
+
+### 12. Assign a claim to a year by its through (end) date
+- **Chose:** Claim year = year of `CLM_THRU_DT` (claims) / `SRVC_DT` (Rx).
+- **Evidence:** 204 inpatient and 330 outpatient claims start in late 2007 and end in 2008.
+- **Why:** This is the CMS convention. It keeps every claim inside 2008–2010 and matches how the beneficiary files are split by year.
+- **Tradeoffs:** A stay from Dec 2008 to Jan 2009 counts entirely in 2009. That's fine at annual granularity; Phase 6 monthly trends will note it.
+- **Date:** 2026-10-27

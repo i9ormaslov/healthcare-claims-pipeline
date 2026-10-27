@@ -1,5 +1,8 @@
 # Minimal on purpose: every dependency is something you can explain in an interview.
-duckdb>=1.1        # analytical SQL engine; reads CSVs directly, single-file database
-pandas>=2.2        # dataframe work in notebooks and validation reporting
-pytest>=8.0        # tests for validation logic (Phase 2)
-jupyter>=1.0       # profiling notebooks (Phase 1)
+# Versions are PINNED (==), not ranges. A DuckDB database file is tied to the
+# engine version that wrote it, so ">=" let two machines disagree (DECISIONS.md #9).
+# Built and tested with Python 3.14.
+duckdb==2.0.0       # analytical SQL engine; reads CSVs directly, single-file database
+pandas==3.1.0       # dataframe work in notebooks and validation reporting
+pytest==9.1.1       # tests for validation logic (Phase 2)
+jupyter==1.1.1      # profiling notebooks (Phase 1)
