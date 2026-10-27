@@ -1,0 +1,21 @@
+# --- Data: never commit raw or processed data (see DECISIONS.md #2) ---
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+# data/extracts/ IS committed: small aggregated CSVs the dashboard reads
+
+# --- Python ---
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+
+# --- Editors / OS ---
+.vscode/
+.DS_Store
+Thumbs.db
+
+# --- Power BI temp/lock files (the .pbix itself IS committed) ---
+~$*.pbix

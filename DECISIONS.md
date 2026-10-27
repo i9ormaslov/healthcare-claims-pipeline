@@ -1,0 +1,87 @@
+# Decisions Log
+
+Each entry: what we chose, what else we considered, and why. Newest at the bottom.
+Format: **Decision** · Alternatives · Tradeoffs · Date
+
+---
+
+### 1. Dataset: CMS DE-SynPUF (one sample), not Synthea
+- **Chose:** one DE-SynPUF sample — Sample 2, see #8 (1 of 20 samples, ~116K synthetic Medicare members, 2008–2010).
+- **Alternatives:** Synthea (generated EHR + claims); all 20 SynPUF samples.
+- **Why:**
+  - It uses the real CMS claims layout, so programs written on it are meant to run on CMS Limited Data Sets.
+  - It has multiple linked files (keyed on `DESYNPUF_ID`), which makes cross-file validation meaningful.
+  - No generator setup is needed.
+  - One sample is enough. All claims for a member live in the same sample number, so a single sample is internally complete.
+- **Tradeoffs:**
+  - Codes are ICD-9 (the US switched to ICD-10 in 2015).
+  - The data is from 2008–2010.
+  - CMS synthesis weakens relationships between variables, so findings demonstrate *method*, not clinical truth. Every summary must say so.
+- **Date:** 2026-10-27
+
+### 2. Raw data is never committed; a download script reproduces it
+- **Chose:** `.gitignore` covers `data/raw/` and `data/processed/`. `src/download.py` fetches the files.
+- **Alternatives:** Commit the CSVs; use Git LFS.
+- **Why:**
+  - The files are hundreds of MB.
+  - The source is public and stable.
+  - A script documents exactly where the data came from.
+- **Tradeoffs:** A reviewer must run one command before anything works. Small aggregated extracts (`data/extracts/`) are committed, so the dashboard works without it.
+- **Date:** 2026-10-27
+
+### 3. Database: DuckDB
+- **Chose:** DuckDB, as a single file at `data/processed/claims.duckdb`.
+- **Alternatives:** SQLite (simplest), Postgres (most "production").
+- **Why:**
+  - DuckDB is columnar and built for analytical queries (GROUP BY, window functions) over millions of rows.
+  - It reads CSVs directly and needs no server.
+- **Tradeoffs:**
+  - It is less familiar to some interviewers than Postgres.
+  - It is not designed for many concurrent writers. That doesn't matter for a batch pipeline.
+  - Postgres would add install and configuration work with no analytical benefit at this size.
+- **Date:** 2026-10-27
+
+### 4. Verify file contents after download, not just the URL
+- **Chose:** `download.py` checks that each zip contains the expected CSV name.
+- **Why:** On CMS's own Sample 1 download page (checked 2026-10-27), the "2010 Beneficiary Summary File" link points to the **Sample 20** file. Trusting the link would silently mix two samples and create thousands of orphaned keys.
+- **Tradeoffs:** None worth mentioning. It's a few lines of code.
+- **Date:** 2026-10-27
+
+### 5. Skip carrier (physician/supplier) claims in the MVP
+- **Chose:** Inpatient, outpatient, and Part D (PDE) only. Carrier is behind a `--include-carrier` flag.
+- **Why:** Carrier is by far the largest file type and is split into two parts. The three service types in the spec are covered without it.
+- **Tradeoffs:** "Outpatient" here means *institutional* outpatient only. Physician office visits are not included, so total cost per member is understated. Say this out loud in any cost discussion.
+- **Date:** 2026-10-27
+
+### 6. Land raw data as text (VARCHAR), type it later
+- **Chose:** `raw` schema, all columns VARCHAR, plus a `source_file` column. Typed, cleaned tables come in Phase 2.
+- **Alternatives:** Let DuckDB infer types on load.
+- **Why:**
+  - A typed load can drop or NULL out bad values, for example a date like `20081399`, without telling you.
+  - As text, bad values survive, so the validation step can count and report them.
+  - We can rebuild clean tables at any time without re-downloading.
+- **Tradeoffs:** There is an extra transformation step, and the raw tables are bigger on disk.
+- **Date:** 2026-10-27
+
+### 7. Dashboard: Power BI Desktop, with static exports in the repo
+- **Chose:** Build in Power BI Desktop (Windows, free). Commit the `.pbix`, plus a PDF export, screenshots, and a short screen recording in `docs/`.
+- **Alternatives:** Tableau Public (free public hosting); Streamlit (live web app).
+- **Why:**
+  - Power BI is commonly listed in healthcare analyst postings.
+  - You already have some exposure to it.
+  - It runs natively on Windows.
+- **Tradeoffs:** Publishing to the Power BI service requires a work or school account; personal emails like Gmail aren't accepted. Even a school account may have "Publish to web" turned off by the university admin. So reviewers likely can't click a live link. Mitigations:
+  1. PDF and screenshots in the README.
+  2. Try your university email.
+  3. Optional Streamlit version later if a live link matters.
+- **Date:** 2026-10-27
+
+### 8. Switched from Sample 1 to Sample 2
+- **Chose:** Sample 2 as the default. The sample number is now a `--sample` flag on both scripts.
+- **What happened:** The first real run got `HTTP 404` for the 2010 Sample 1 beneficiary file. Following the URL pattern of 2008/2009 didn't work, and CMS's own link points at Sample 20 (#4). An open GitHub issue on the OHDSI ETL-CMS project reports the same problem with no working URL. The file appears not to be published at all.
+- **Alternatives considered:**
+  - Keep Sample 1 with only 2008–2009 beneficiary data. We'd lose 2010 enrollment, chronic-condition flags, and deaths for 2010 claims. That's a real analytical gap, which is worse than a re-download.
+  - Use Sample 20's 2010 file. That's a different synthetic population, so it would create the exact orphan-key problem #4 guards against.
+- **Why Sample 2:** All eight files are linked consistently (checked 2026-10-27). Each sample is a complete, self-contained slice, so nothing analytical depends on which number we pick.
+- **Tradeoff:** One extra download. The ingest patterns include the sample number, so leftover Sample 1 files in `data/raw/` can't be mixed in.
+- **Date:** 2026-10-27

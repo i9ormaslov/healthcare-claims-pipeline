@@ -1,0 +1,5 @@
+# Minimal on purpose: every dependency is something you can explain in an interview.
+duckdb>=1.1        # analytical SQL engine; reads CSVs directly, single-file database
+pandas>=2.2        # dataframe work in notebooks and validation reporting
+pytest>=8.0        # tests for validation logic (Phase 2)
+jupyter>=1.0       # profiling notebooks (Phase 1)
