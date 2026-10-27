@@ -26,7 +26,7 @@ import time
 
 import duckdb
 
-from config import DB_PATH, SQL_DIR
+from config import DB_PATH, SQL_DIR, connect_db
 
 CLEAN_SQL_DIR = SQL_DIR / "clean"
 
@@ -56,7 +56,7 @@ def main() -> int:
         print(f"{DB_PATH} not found. Run src/ingest.py first.")
         return 1
 
-    con = duckdb.connect(str(DB_PATH))
+    con = connect_db()
     try:
         timings = build(con)
     except Exception as exc:

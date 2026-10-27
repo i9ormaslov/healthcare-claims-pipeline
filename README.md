@@ -26,6 +26,7 @@ pip install -r requirements.txt
 python src/download.py      # ~6 files into data/raw/
 python src/ingest.py        # loads data/processed/claims.duckdb
 python src/clean.py         # builds typed, flagged clean.* tables
+python src/validate.py      # 62 data-quality checks -> docs/data_quality_report.md
 jupyter notebook            # open notebooks/01_profile_raw.ipynb, Run All
 ```
 
@@ -39,6 +40,7 @@ sql/             analysis queries
 notebooks/       exploration and profiling
 tests/           pytest tests
 docs/            data-quality report, summary, slides, dashboard exports
+                 (latest: docs/data_quality_report.md)
 ```
 
 ## Architecture

@@ -158,4 +158,40 @@ How to use this file:
   - No half-rebuilt layer where tables disagree.
 - My answer:
 
-_(Questions for validation, SQL, the dashboard, and communication will be added as we build those phases.)_
+## Validation (Phase 2b)
+
+**Q: How do you know your data is good?**
+- Hints:
+  - 62 automated checks in 7 categories: reconciliation, duplicates, nulls, impossible dates, orphaned keys, values, outliers.
+  - Three severities. Known issues are tolerated visibly, with a threshold.
+  - Results are stored per run; the report is regenerated; the exit code stops the pipeline.
+- My answer:
+
+**Q: How do you know your checks actually work?**
+- Hints:
+  - Broke a copy of the data six ways on purpose: lost rows, a duplicate fill, reversed dates, an unknown member, an unmapped code, a known issue past tolerance.
+  - Every one was caught, most by two checks.
+  - Also: a crashed check counts as FAIL, and that caught a bug in my own check SQL.
+- My answer:
+
+**Q: Your data has known problems. Why doesn't validation just fail?**
+- Hints:
+  - The problems are documented and flagged, and they come from the synthetic source.
+  - Failing every run would train people to ignore failures.
+  - Tolerances (about 2× today's rate) catch the day it gets worse; tested at 5.2% → 11.9%.
+- My answer:
+
+**Q: How did you detect cost outliers, and why that method?**
+- Hints:
+  - Costs are right-skewed; dollar-scale IQR flagged 11%, which is meaningless.
+  - Log-scale Tukey fences: 1.3% / 2.8% / 0%.
+  - The extreme fence is above the CMS cap, so top-coding removed all extreme outliers. The high-cost analysis understates the tail.
+- My answer:
+
+**Q: What happens downstream when validation fails?**
+- Hints:
+  - Exit code 1. The pipeline runner (Phase 3) stops before building analysis tables.
+  - The report lists failures first, with rows and dollars affected.
+- My answer:
+
+_(Questions for tests, SQL, the dashboard, and communication will be added as we build those phases.)_

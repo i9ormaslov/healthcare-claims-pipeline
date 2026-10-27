@@ -146,3 +146,42 @@ Format: **Decision** · Alternatives · Tradeoffs · Date
 - **Why:** download.py and ingest.py had duplicate settings guarded only by a comment saying they "must match." With a third script, duplication becomes drift. `CLAIMS_DB` also lets every step run against a scratch database for testing.
 - **Tradeoff:** One more file to explain.
 - **Date:** 2026-10-27
+
+### 16. Validation: declarative checks with three severities and tolerances
+- **Chose:** 62 checks defined as data in `src/checks.py`, run by `src/validate.py`.
+  - Each check is an ID, a category, a severity, and one SQL query returning `violations, total, amount, detail`.
+  - **error** = must be zero.
+  - **warn** = known, documented issue; fails only if its rate exceeds `fail_above_pct`.
+  - **info** = context; never fails.
+- **Alternatives:**
+  - A framework (Great Expectations, Soda, dbt tests): powerful, but heavy to install and explain for a portfolio project.
+  - Ad-hoc asserts in scripts: no report and no history.
+- **Why:**
+  - Adding a check is adding one entry.
+  - Tolerances let known synthetic-data issues (e.g., 5.2% impossible Rx costs) pass *visibly* while still catching the day they get worse. Tested: pushing that rate to 11.9% flipped WARN → FAIL.
+  - The status logic (`evaluate()`) is a pure function, so it's testable without a database (2c).
+- **Tradeoffs:** Tolerances are judgment calls, roughly 2× today's rate, and documented in the code. A framework would add features (scheduling, alerting) we don't need yet.
+- **Date:** 2026-10-27
+
+### 17. A crashed check is a FAIL, and the run exits non-zero
+- **Chose:**
+  - If a check's SQL errors, its status is FAIL with the error text as detail.
+  - `validate.py` exits with code 1 when anything fails.
+  - Results append to `qa.check_results` with a run ID.
+- **What happened:** On the first run, two of my own conversion-loss checks had a SQL bug. Because crashes count as failures, the run failed loudly. Had they been skipped, the report would have shown "60 passed" and nobody would know two checks never ran.
+- **Why:**
+  - A broken check must never look like a passing one.
+  - The exit code lets a pipeline stop before building analysis on bad data ("fail fast").
+  - The history table shows whether an issue is growing between runs.
+- **Verified:** Six deliberate kinds of damage on a copy of the data were all caught, most by more than one check: lost rows, a duplicate fill, reversed dates, an unknown member, an unmapped code, and a known issue past tolerance.
+- **Date:** 2026-10-27
+
+### 18. High-cost flags use Tukey fences on log(cost)
+- **Chose:** Flag claims above Q3 + 1.5×IQR of **ln(amount)**. Also report the extreme fence (Q3 + 3×IQR).
+- **What happened:** The first version used dollar-scale fences (Q3 + 3×IQR on raw dollars) and flagged **11%** of outpatient claims. Costs are so right-skewed (median $70) that the dollar quartile range is tiny. That isn't outlier detection; it's the normal right tail.
+- **Alternatives:**
+  - Mean ± 3 standard deviations: distorted by skew and by the cap.
+  - Fixed percentile (top 1%): always flags exactly 1%, which says nothing.
+- **Why log:** Cost data behaves multiplicatively ("10× typical"), so distance on the log scale matches how analysts think about it. The result is 1.3% inpatient, 2.8% outpatient, 0% Rx.
+- **Finding:** The **extreme** fence is above CMS's cap in all three files ($228K vs $57K, $25K vs $3.3K, $66K vs $570). **Top-coding removed every extreme outlier.** The high-cost analysis will understate the real tail, and this proves it.
+- **Date:** 2026-10-27

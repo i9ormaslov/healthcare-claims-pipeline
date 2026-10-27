@@ -28,7 +28,7 @@ from pathlib import Path
 
 import duckdb
 
-from config import DB_PATH, DEFAULT_SAMPLE, RAW_DIR
+from config import DB_PATH, DEFAULT_SAMPLE, RAW_DIR, connect_db
 
 
 
@@ -91,7 +91,7 @@ def main() -> int:
     args = parser.parse_args()
 
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    con = duckdb.connect(str(DB_PATH))
+    con = connect_db()
     con.execute("CREATE SCHEMA IF NOT EXISTS raw")
     con.execute("""
         CREATE TABLE IF NOT EXISTS raw._load_log (
